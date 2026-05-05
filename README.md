@@ -2,7 +2,7 @@
 
 This repository contains visualization and analysis supporting the manuscript:
 
-**“Beyond Bacteria: A Multi-Omics View of the Gut–Brain Axis in Parkinson’s Disease.”**
+**Beyond Bacteria: A Multi-Omics View of the Gut–Brain Axis in Parkinson’s Disease.**
 
 The repository includes publication-ready figures and visualizations derived from the curated dataset.
 
