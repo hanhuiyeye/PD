@@ -1,171 +1,209 @@
 ---
 title: "Visualization"
 output: html_document
-date: "2026-05-05"
+date: "2026-05-24"
 ---
 ```{r}
 library(tidyverse)
-library(readxl)
 library(ggplot2)
 ```
 
-```{r,message=FALSE,warning=F}
-# Load in supplement table
-data <- read_excel("Supplement_table1.xlsx")
-data <- data %>%
-  select(Category, NOS, `Publish Year`) %>%
-  mutate(NOS = as.numeric(NOS), `Publish Year` = as.numeric(`Publish Year`))     
+```{r}
+# Data mirrors Supplement Table 1
+# (68 entries; 7 cross-listings; 61 unique studies)
+data <- tibble::tribble(
+  ~Category,     ~NOS, ~Year,
+  "Microbiome",  7,    2020,
+  "Microbiome",  8,    2020,
+  "Microbiome",  7,    2018,
+  "Microbiome",  8,    2023,
+  "Microbiome",  7,    2019,
+  "Microbiome",  8,    2017,
+  "Microbiome",  7,    2017,
+  "Microbiome",  8,    2019,
+  "Microbiome",  8,    2017,
+  "Microbiome",  7,    2021,
+  "Microbiome",  6,    2023,
+  "Microbiome",  8,    2022,
+  "Microbiome",  7,    2023,
+  "Microbiome",  7,    2024,
+  "Microbiome",  7,    2020,
+  "Microbiome",  NA,   2024,
+  "Microbiome",  7,    2023,
+  "Microbiome",  8,    2016,
+  "Microbiome",  NA,   2020,
+  "Microbiome",  8,    2018,
+  "Microbiome",  NA,   2025,
+  "Microbiome",  7,    2024,
+  "Microbiome",  7,    2016,
+  "Microbiome",  7,    2019,
+  "Microbiome",  8,    2018,
+  "Microbiome",  8,    2023,
+  "Microbiome",  8,    2024,
+  "Microbiome",  8,    2022,
+  "Microbiome",  7,    2025,
+  "Microbiome",  8,    2023,
+  "Microbiome",  6,    2025,
+  "Microbiome",  7,    2022,
+  "Microbiome",  8,    2025,
+  "Microbiome",  8,    2025,
+  "Microbiome",  8,    2025,
+  "Microbiome",  7,    2025,
+  "Microbiome",  7,    2023,
+  "Microbiome",  8,    2017,
+  "Microbiome",  8,    2023,
+  "Virome",      5,    2017,
+  "Virome",      5,    2026,
+  "Virome",      5,    2026,
+  "Mycobiome",   7,    2020,
+  "Mycobiome",   8,    2022,
+  "Mycobiome",   9,    2025,
+  "Metabolome",  7,    2022,
+  "Metabolome",  6,    2020,
+  "Metabolome",  6,    2021,
+  "Metabolome",  7,    2022,
+  "Metabolome",  6,    2022,
+  "Metabolome",  6,    2016,
+  "Metabolome",  7,    2024,
+  "Metabolome",  6,    2023,
+  "Metabolome",  8,    2021,
+  "Metabolome",  7,    2020,
+  "Metabolome",  7,    2022,
+  "Metabolome",  7,    2022,
+  "Metabolome",  8,    2023,
+  "Metabolome",  6,    2020,
+  "Metabolome",  7,    2025,
+  "Metabolome",  NA,   2025,
+  "Metabolome",  NA,   2025,
+  "Metabolome",  NA,   2025,
+  "Metabolome",  NA,   2023,
+  "Metabolome",  NA,   2021,
+  "Proteome",    7,    2024,
+  "Proteome",    6,    2025,
+  "Proteome",    NA,   NA       # entry #68 is a pre-print, year not encoded
+)
+
+cat_levels <- c("Microbiome", "Virome", "Mycobiome", "Metabolome", "Proteome")
+cat_colors <- c(
+  "Microbiome" = "#3B5BA5",
+  "Virome"     = "#F15854",
+  "Mycobiome"  = "#B276B2",
+  "Metabolome" = "#5DA5DA",
+  "Proteome"   = "#60BD68"
+)
+
+out_dir <- "figures"
+if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 ```
 
 ```{r}
-# Proportion of papers across sections 3.2-3.6:
-data %>%
+# Pie chart: proportion of papers across sections 3.2-3.6
+pie_plot <- data %>%
   filter(!is.na(Category)) %>%
   dplyr::count(Category) %>%
   mutate(
-    pct = round(n / sum(n) * 100, 1),
-    label = paste0(pct, "%")
-  ) %>% 
-  mutate(
-    Category = factor(
-      Category,
-      levels = c("Microbiome", "Virome", "Mycobiome", "Metabolome", "Proteome")
-    )
-  )%>%
+    pct   = round(n / sum(n) * 100, 1),
+    label = paste0(pct, "%"),
+    Category = factor(Category, levels = cat_levels)
+  ) %>%
   ggplot(aes(x = "", y = n, fill = Category)) +
   geom_bar(stat = "identity", width = 1, color = "white", linewidth = 0.4) +
   coord_polar(theta = "y") +
-  
   geom_text(
     aes(label = label),
     position = position_stack(vjust = 0.5),
     size = 4,
-    color = "white"  
+    color = "white"
   ) +
-  
-  scale_fill_manual(values = c(
-    "Microbiome" = "#3B5BA5",
-    "Virome"     = "#F15854",
-    "Mycobiome"  = "#B276B2",
-    "Metabolome" = "#5DA5DA",
-    "Proteome"   = "#60BD68"
-  )) +
-  
+  scale_fill_manual(values = cat_colors) +
   labs(
-    title = "Distribution of included studies across \nbacteriome, virome, mycobiome, metabolome, and proteome in Parkinson’s disease",
+    title = NULL,
     fill = "Omics category"
   ) +
-  
   theme_void() +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.title   = element_text(hjust = 0.5, face = "bold"),
     legend.position = "right",
     legend.title = element_text(face = "bold")
   )
+
+pie_plot
+ggsave(file.path(out_dir, "pie.pdf"), pie_plot, width = 8, height = 6)
 ```
 
 
 ```{r}
-# Yearly Publication Trends by Section:
+# Yearly publication trends by section
 plot_data <- data %>%
-  filter(!is.na(Category), !is.na(`Publish Year`)) %>%
-  mutate(
-    Omics = factor(
-      Category,
-      levels = c("Microbiome", "Virome", "Mycobiome", "Metabolome", "Proteome")
-    ),
-    Year = as.numeric(`Publish Year`)
-  ) %>%
+  filter(!is.na(Category), !is.na(Year)) %>%
+  mutate(Omics = factor(Category, levels = cat_levels)) %>%
   dplyr::count(Omics, Year)
 
-ggplot(plot_data, aes(x = Year, y = n, color = Omics, group = Omics)) +
+trend_plot <- ggplot(plot_data, aes(x = Year, y = n, color = Omics, group = Omics)) +
   geom_line(linewidth = 1.0) +
   geom_point(size = 2.6) +
-  
-  scale_color_manual(values = c(
-    "Microbiome" = "#3B5BA5",
-    "Virome"     = "#F15854",
-    "Mycobiome"  = "#B276B2",
-    "Metabolome" = "#5DA5DA",
-    "Proteome"   = "#60BD68"
-  )) +
-  
+  scale_color_manual(values = cat_colors) +
   scale_x_continuous(
     breaks = seq(min(plot_data$Year), max(plot_data$Year), by = 1)
   ) +
-  
   scale_y_continuous(
-  limits = c(0, max(plot_data$n) + 1),
-  breaks = seq(0, max(plot_data$n) + 1, by = 1),
-  expand = expansion(mult = c(0, 0))
+    limits = c(0, max(plot_data$n) + 1),
+    breaks = seq(0, max(plot_data$n) + 1, by = 1),
+    expand = expansion(mult = c(0, 0))
   ) +
-  
   labs(
-    title = "Publication trends of included studies by omics category",
+    title = NULL,
     x = "Publication year",
     y = "Number of included studies",
     color = "Omics category"
   ) +
-  
   theme_classic(base_size = 13) +
   theme(
-    plot.title = element_text(
-      face = "bold",
-      hjust = 0.5,
-      size = 13
-    ),
-    axis.title = element_text(face = "bold", size = 12),
+    plot.title  = element_text(face = "bold", hjust = 0.5, size = 13),
+    axis.title  = element_text(face = "bold", size = 12),
     axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
     axis.text.y = element_text(size = 10),
     legend.title = element_text(face = "bold", size = 11),
-    legend.text = element_text(size = 10),
+    legend.text  = element_text(size = 10),
     legend.position = "right",
     panel.grid.major.y = element_line(color = "grey85", linewidth = 0.3),
     panel.grid.major.x = element_blank()
   )
+
+trend_plot
+ggsave(file.path(out_dir, "trend.pdf"), trend_plot, width = 9, height = 6)
 ```
 
 
 ```{r}
-# NOS Bar Graph:
+# NOS bar graph: quality assessment of included observational studies
 nos_data <- data %>%
   filter(!is.na(NOS)) %>%
   dplyr::count(NOS)
 
-ggplot(nos_data, aes(x = factor(NOS), y = n)) +
-  geom_col(
-    fill = "#3B5BA5",
-    width = 0.65
-  ) +
-  geom_text(
-    aes(label = n),
-    vjust = -0.4,
-    size = 4
-  ) +
+nos_plot <- ggplot(nos_data, aes(x = factor(NOS), y = n)) +
+  geom_col(fill = "#3B5BA5", width = 0.65) +
+  geom_text(aes(label = n), vjust = -0.4, size = 4) +
   scale_y_continuous(
     limits = c(0, max(nos_data$n) + 5),
     breaks = seq(0, max(nos_data$n) + 5, by = 5),
     expand = expansion(mult = c(0, 0.05))
   ) +
   labs(
-    title = "Quality assessment of included studies based on NOS scores",
+    title = NULL,
     x = "NOS score",
     y = "Number of included studies"
   ) +
   theme_classic(base_size = 13) +
   theme(
-    plot.title = element_text(face = "bold", hjust = 0.5, size = 13),
-    axis.title = element_text(face = "bold", size = 12),
-    axis.text = element_text(size = 10),
+    plot.title  = element_text(face = "bold", hjust = 0.5, size = 13),
+    axis.title  = element_text(face = "bold", size = 12),
+    axis.text   = element_text(size = 10),
     panel.grid.major.y = element_line(color = "grey85", linewidth = 0.3),
     panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank()
+    panel.grid.minor   = element_blank()
   )
+
+nos_plot
+ggsave(file.path(out_dir, "NOS.pdf"), nos_plot, width = 8, height = 6)
 ```
-
-
-
-
-
-
-
